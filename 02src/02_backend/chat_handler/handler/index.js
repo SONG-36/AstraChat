@@ -1,7 +1,9 @@
 import { simpleChat } from '../services/llm_client.js';
+import { successResponse, errorResponse } from './response_builder.js';
 
-export async function handler(event) {
+export const handler = async (event) => {
   try {
+    //1 解析输入
     let body = {};
     if (event?.body) {
       body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
@@ -14,46 +16,40 @@ export async function handler(event) {
         statusCode: 400,
         body: JSON.stringify({
           ok: false,
-          error: 'message is required',
+          error: { type: 'bad_request', message: 'message is required' },
+          meta: {},
         }),
       };
     }
 
-    // 2. 调用服务层，可能成功也可能失败
+    //2 调用服务层（可能成功/失败）
     const result = await simpleChat(userMessage);
 
-    // 3. 根据 result.ok 判断成功还是失败
+    //3 根据 result.ok 输出不同结构
     if (!result.ok) {
-      // 服务层识别出错误（V1 不重试，只上报）
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          ok: false,
+      return errorResponse(
+        {
           errorType: result.errorType,
           retryAfter: result.retryAfter,
           message: result.message,
-        }),
-      };
+        },
+        {
+          provider: 'openai',
+        }
+      );
     }
 
-    // 4. 成功情况
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        ok: true,
-        reply: result.replyText,
-      }),
-    };
+    //4 成功响应
+    return successResponse(result.replyText, {
+      provider: 'openai',
+      model: 'gpt-4.1-mini',
+    });
 
   } catch (err) {
     console.error('[handler] fatal error:', err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        ok: false,
-        error: 'internal_error',
-        message: err.message,
-      }),
-    };
+    return errorResponse(
+      { errorType: 'internal_error', message: err.message },
+      { provider: 'unknown' }
+    );
   }
 }

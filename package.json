@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:local": "node 02src/test_local.js",
+    "build:lambda": "esbuild 02src/02_backend/chat_handler/handler/index.js --bundle --platform=node --target=node20 --format=esm --outfile=lambda_bundle.mjs"
   },
   "repository": {
     "type": "git",
@@ -13,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/SONG-36/AstraChat/issues"
   },
@@ -21,8 +22,7 @@
   "dependencies": {
     "dotenv": "^17.2.3"
   },
-  "type": "module",
-  "scripts": {
-    "test:local": "node 02src/test_local.js"
+  "devDependencies": {
+    "esbuild": "^0.27.1"
   }
 }

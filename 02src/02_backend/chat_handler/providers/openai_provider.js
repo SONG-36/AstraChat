@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import {OpenAIErrorTypes} from "./openai_errors.js"
 
 const API_KEY = process.env.OPENAI_API_KEY;
