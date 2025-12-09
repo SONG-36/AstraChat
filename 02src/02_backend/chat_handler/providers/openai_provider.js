@@ -52,7 +52,7 @@ export async function callOpenAI({ systemPrompt, userPrompt}) {
 
     let json;
     try {
-        json = await res.json;
+        json = await res.json();
     } catch (parseErr) {
         throw {
             type: OpenAIErrorTypes.SERVER,

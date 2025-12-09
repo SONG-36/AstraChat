@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test:local": "node 02src/test_local.js",
-    "build:lambda": "esbuild 02src/02_backend/chat_handler/handler/index.js --bundle --platform=node --target=node20 --format=esm --outfile=lambda_bundle.mjs"
+"scripts": {
+    "clean": "rm -rf dist lambda.zip && mkdir dist",
+    "build:lambda": "esbuild 02src/02_backend/chat_handler/handler/index.js --bundle --platform=node --target=node20 --format=esm --outfile=dist/lambda_bundle.mjs",
+    "zip:lambda": "cd dist && zip -r ../lambda.zip .",
+    "upload:lambda": "aws lambda update-function-code --function-name AstraChatHandler --zip-file fileb://lambda.zip",
+    "deploy": "npm run clean && npm run build:lambda && npm run zip:lambda && npm run upload:lambda && node deploy/deploy_lambda.js"
   },
   "repository": {
     "type": "git",

@@ -1,1 +1,15 @@
+# Node
+node_modules/
+npm-debug.log
+
+# Env
 .env
+
+# Lambda build artifacts
+*.zip
+lambda_bundle.js
+lambda_bundle.mjs
+dist/
+
+# Local dev output
+response.json
