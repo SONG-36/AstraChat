@@ -4,47 +4,43 @@ import { successResponse, errorResponse } from './response_builder.js';
 
 export const handler = async (event) => {
   try {
-    //1. 统一入口：解析输入（支持 { body: "..." } / 直接 JSON 等）
+    // 1. 解析输入
     const parsed = parseInput(event);
 
-    //1.1 schema 级错误 -> 400
+    // 1.1 schema 错误
     if (parsed.error) {
       return {
         statusCode: 400,
         body: JSON.stringify({
           ok: false,
-          error: {
-            type: parsed.error.type || 'bad_rquest',
-            message: parsed.error.mesage || 'invalid request',
-          },
-          meat: {},
+          error: parsed.error,
+          meta: {},
         }),
       };
     }
 
     const { action, payload } = parsed;
 
-    //1.2 暂时只支持一个动作：chat
-    if (action !== 'chat') {
+    // 1.2 限制只支持 chat
+    if (action !== "chat") {
       return {
         statusCode: 400,
         body: JSON.stringify({
           ok: false,
           error: {
-            type: 'unsupported_action',
-            message: `Unknown action: ${action}`,        
-         },
-        meta: {},
+            type: "unsupported_action",
+            message: `Unknown action: ${action}`,
+          },
+          meta: {},
         }),
       };
     }
 
     const userMessage = payload.message;
 
-    //2 调用服务层（可能成功/失败）
+    // 2. 调用 OpenAI
     const result = await simpleChat(userMessage);
 
-    //3 根据 result.ok 输出不同结构
     if (!result.ok) {
       return errorResponse(
         {
@@ -52,23 +48,23 @@ export const handler = async (event) => {
           retryAfter: result.retryAfter,
           message: result.message,
         },
-        {
-          provider: 'openai',
-        }
+        { provider: "openai" }
       );
     }
 
-    //4 成功响应
-    return successResponse(result.replyText, {
-      provider: 'openai',
-      model: 'gpt-4.1-mini',
-    });
+    // 3. 成功响应
+    return successResponse(
+      {
+        reply: result.replyText,
+      },
+      { provider: "openai", model: "gpt-4.1-mini" }
+    );
 
   } catch (err) {
-    console.error('[handler] fatal error:', err);
+    console.error("[handler] fatal error:", err);
     return errorResponse(
-      { errorType: 'internal_error', message: err.message },
-      { provider: 'unknown' }
+      { errorType: "internal_error", message: err.message },
+      { provider: "unknown" }
     );
   }
-}
+};

@@ -1,51 +1,37 @@
 export function parseInput(event) {
-    let input = event;
+  // 1) event 必须是一个对象
+  if (!event || typeof event !== "object") {
+    return {
+      error: { type: "bad_request", message: "Event must be a JSON object" },
+    };
+  }
 
-    //Support API Gateway proxy format
-    if (event?.body) {
-        try {
-            input = typeof event.body === "string"
-              ? JSON.parse(event.body)
-              : event.body;
-        } catch (err) {
-            return {
-                error: {
-                    type: "bad_json",
-                    message: "Invalid JSON in event.body"
-                }
-            };
-        }
-    }
+  // 2) action 必须存在
+  if (typeof event.action !== "string") {
+    return {
+      error: { type: "bad_request", message: "'action' is required" },
+    };
+  }
 
-    //Must be object
-    if (!input || typeof input !== "object") {
-        return {
-            error: {
-                type: "bad_request",
-                message: "Input must be a JSON object"
-            }
-        };
-    }
+  // 3) payload.message 必须存在且为字符串
+  if (
+    !event.payload ||
+    typeof event.payload.message !== "string" ||
+    event.payload.message.trim() === ""
+  ) {
+    return {
+      error: {
+        type: "bad_request",
+        message: "'payload.message' is required",
+      },
+    };
+  }
 
-    const { action, payload } = input;
-
-    if (!action) {
-        return {
-            error: {
-                type: "bad_request",
-                message: "'action' is required"
-            }
-        };
-    }
-
-    if (!payload || typeof payload.message !== "string") {
-        return {
-            error: {
-                type: "bad_request",
-                message: "'payload.message' is required"
-            }
-        };
-    }
-
-    return {action, payload};
+  // 4) 全部通过，返回规范化结构
+  return {
+    action: event.action,
+    payload: {
+      message: event.payload.message.trim(),
+    },
+  };
 }

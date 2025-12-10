@@ -1,11 +1,13 @@
 // index.js — AstraChat Widget
+import { sendMessageToLambda } from "./api_client.js";
+
 console.log("INDEX.JS 加载成功");
 
-// 1. 找到根容器
+// ===============================
+// 1. 渲染 Widget UI
+// ===============================
 const root = document.getElementById("astra-chat-root");
-console.log("找到 root：", root);
 
-// 2. 渲染基础布局
 root.innerHTML = `
     <div id="astra-widget" style="
         width: 300px;
@@ -28,6 +30,7 @@ root.innerHTML = `
             border-radius: 6px;
             padding: 8px;
             overflow-y: auto;
+            font-size: 14px;
         "></div>
 
         <!-- 输入区 -->
@@ -60,40 +63,69 @@ root.innerHTML = `
     </div>
 `;
 
-// === 绑定交互 ===
 const input = document.getElementById("send-input");
 const sendBtn = document.getElementById("send-btn");
 const messages = document.getElementById("messages");
 
-// 发送消息函数
-function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
-
-    // 追加新消息
+// 工具函数：展示消息
+function addMessage(role, text) {
     const bubble = document.createElement("div");
-    bubble.style.margin = "4px 0";
+    bubble.style.margin = "6px 0";
     bubble.style.padding = "6px 8px";
-    bubble.style.background = "#e8f0ff";
     bubble.style.borderRadius = "4px";
     bubble.style.width = "fit-content";
+    bubble.style.maxWidth = "90%";
+
+    if (role === "user") {
+        bubble.style.background = "#e8f0ff";
+        bubble.style.alignSelf = "flex-end";
+    } else if (role === "ai") {
+        bubble.style.background = "#d1ffd6";
+        bubble.style.alignSelf = "flex-start";
+    } else {
+        bubble.style.background = "#ffe1e1";
+        bubble.style.color = "#c00";
+    }
+
     bubble.textContent = text;
-
     messages.appendChild(bubble);
-
-    // 自动滚到底
     messages.scrollTop = messages.scrollHeight;
-
-    // 自动清空输入框
-    input.value = "";
 }
 
-// 按钮点击发送
-sendBtn.addEventListener("click", sendMessage);
+// ===============================
+// 发送流程（正式版）
+// ===============================
+async function sendMessage() {
+    const userMsg = input.value.trim();
+    if (!userMsg) return;
 
-// 回车键发送
-input.addEventListener("keydown", (ev) => {
-    if (ev.key === "Enter") {
-        sendMessage();
+    addMessage("user", userMsg);
+    input.value = "";
+
+    // 显示“思考中”
+    const thinking = document.createElement("div");
+    thinking.textContent = "AI 正在思考…";
+    thinking.style.padding = "6px 8px";
+    thinking.style.background = "#fff3cd";
+    thinking.style.borderRadius = "4px";
+    messages.appendChild(thinking);
+
+    // 调用后端
+    const result = await sendMessageToLambda(userMsg);
+
+    // 移除思考提示
+    thinking.remove();
+
+    // 正常返回
+    if (result.ok) {
+        addMessage("ai", result.data.reply.text);
     }
-});
+    // 错误返回
+    else {
+        addMessage("error", result.error?.message || "未知错误");
+    }
+}
+
+// 绑定事件
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keydown", (ev) => ev.key === "Enter" && sendMessage());

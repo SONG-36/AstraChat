@@ -13,24 +13,22 @@ try {
 
     console.log("\n🧪 Running a quick test invocation...\n");
 
-    // FIXED: Lambda 需要 event.body 是 JSON 字符串
     const testPayload = JSON.stringify({
     body: JSON.stringify({
-        action: "chat",
-        payload: { message: "hello from deploy script" }
-    }),
+        message: "hello from deploy script"
+    })
     });
 
-    const testResult = execSync(
-        `aws lambda invoke \
-            --function-name AstraChatHandler \
-            --cli-binary-format raw-in-base64-out \
-            --payload '${testPayload}' \
-            response.json`,
-        { encoding: "utf-8" }
-    );
+    const testResult = execSync(`
+        aws lambda invoke \
+        --function-name AstraChatHandler \
+        --cli-binary-format raw-in-base64-out \
+        --payload '${testPayload}' \
+        response.json
+        `, { encoding: "utf-8" });
 
-    console.log("🟦 Invocation result:");
+    console.log("Lambda invocation result:", testResult);
+
     console.log(testResult);
 
     console.log("📄 Response saved to response.json\n");
