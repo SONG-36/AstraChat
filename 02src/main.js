@@ -1,28 +1,23 @@
-import { Context } from "./runtime/context.js";
-import { createPipeline } from "./runtime/pipeline.js";
+import { assertEnv } from "./env.js";
+import { createContext } from "./runtime/context.js";
+import { buildStages } from "./runtime/pipeline.js";
+import { Engine } from "./runtime/engine.js";
 
-import { InputStage } from "./stages/input.stage.js";
-import { NormalizeStage } from "./stages/normalize.stage.js";
-import { DecideStage } from "./stages/decide.stage.js";
-import { GenerateStage } from "./stages/generate.stage.js";
-import { RespondStage } from "./stages/respond.stage.js";
+// 1) 启动自检：环境变量必须齐全
+assertEnv();
 
-const pipeline = createPipeline([
-  new InputStage(),
-  new NormalizeStage(),
-  new DecideStage(),
-  new GenerateStage(),
-  new RespondStage(),
-]);
+// 2) 构建引擎
+const engine = new Engine(buildStages());
 
-async function main() {
-  const ctx = new Context({
-    userId: "u001",
-    input: "你好，介绍一下 AWS",
-  });
+// 3) 三条测试用例
+const tests = [
+  "MK-DM12-1 功率多少",
+  "给我这款产品资料",
+  "你好",
+];
 
-  const result = await pipeline.run(ctx);
-  console.log("OUTPUT:", result.text);
+for (const t of tests) {
+  console.log("\nINPUT:", t);
+  const ctx = createContext({ rawMessage: t });
+  await engine.run(ctx);
 }
-
-main();
